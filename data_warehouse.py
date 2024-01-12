@@ -17,3 +17,15 @@ dim_type.to_sql('dim_type', engine, if_exists='replace', index=False)
 dim_stat.to_sql('dim_stat', engine, if_exists='replace', index=False)
 dim_stat_value.to_sql('dim_stat_value', engine, if_exists='replace', index=False)
 
+#Transform data and create fact table
+fact_pokemon_stat = pd.melt(pokemon_data, id_vars=['ID'], value_vars=['HP', 'Attack', 'Defense', 'Sp. Atk', 'Sp. Def', 'Speed'],
+                            var_name='stat_name', value_name='value')
+fact_pokemon_stat = pd.merge(fact_pokemon_stat, dim_pokemon, left_on='ID', right_on='ID')
+fact_pokemon_stat = pd.merge(fact_pokemon_stat, dim_type, left_on='Type1', right_on='type_name', how='left')
+fact_pokemon_stat = pd.merge(fact_pokemon_stat, dim_stat, left_on='stat_name', right_on='stat_name')
+fact_pokemon_stat = pd.merge(fact_pokemon_stat, dim_stat_value, left_on='value', right_on='value')
+
+#Load the fact table to data warehouse
+fact_pokemon_stat[['ID', 'type_id', 'stat_id', 'stat_value_id', 'value']].to_sql('fact_pokemon_stat', engine, if_exists='replace', index=False)
+
+print("Data Warehousing Completed")
